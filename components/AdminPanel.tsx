@@ -30,7 +30,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     return () => clearTimeout(timer);
   }, [settings, products, orders]);
 
-  const totalRevenue = orders.reduce((sum, o) => sum + o.price, 0);
+  const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
 
   const handleSimulateSale = () => {
     if (products.length === 0) return alert("Ajoutez au moins un produit !");
@@ -53,14 +53,36 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     const description = await generateProductDescription(newProduct.title, newProduct.category);
     onAddProduct({
       id: Date.now().toString(),
-      title: newProduct.title,
-      price: parseFloat(newProduct.price) || 0,
-      description,
-      imageUrl: newProduct.imageUrl || `https://picsum.photos/seed/${newProduct.title}/400/300`,
-      category: newProduct.category
+      title: String(newProduct.title),
+      price: parseFloat(String(newProduct.price)) || 0,
+      description: String(description),
+      imageUrl: newProduct.imageUrl || `https://picsum.photos/seed/${newProduct.title.replace(/\s+/g, '')}/400/300`,
+      category: String(newProduct.category)
     });
     setNewProduct({ title: '', price: '', category: 'Général', imageUrl: '' });
     setIsGenerating(false);
+  };
+
+  const handleUpdateProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingProduct) {
+      onUpdateProduct(editingProduct);
+      setEditingProduct(null);
+    }
+  };
+
+  const resetDesign = () => {
+    if(confirm("Voulez-vous réinitialiser tout le style du site ?")) {
+      onUpdateSettings({
+        backgroundColor: '#f3f4f6',
+        accentColor: '#4f46e5',
+        textColor: '#111827',
+        useImageBackground: false,
+        backgroundImage: '',
+        fontFamily: 'modern',
+        buttonRadius: 'xl'
+      });
+    }
   };
 
   return (
@@ -93,31 +115,48 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         ))}
       </nav>
 
-      {/* ONGLETS DE DESIGN & CONTENU */}
       {activeTab === 'design' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4">
           <section className="bg-white p-10 rounded-[3rem] shadow-xl space-y-6">
-            <h3 className="text-xl font-black">Section Hero (Accueil)</h3>
+            <h3 className="text-xl font-black">Identité & Hero</h3>
             <div className="space-y-4">
                <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nom de la Boutique</label>
+                <input type="text" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" value={String(settings.shopName)} onChange={e => onUpdateSettings({ shopName: e.target.value })} />
+              </div>
+               <div>
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Titre Principal</label>
-                <input type="text" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" value={settings.heroTitle} onChange={e => onUpdateSettings({ heroTitle: e.target.value })} />
+                <input type="text" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold" value={String(settings.heroTitle)} onChange={e => onUpdateSettings({ heroTitle: e.target.value })} />
               </div>
               <div>
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sous-titre</label>
-                <textarea rows={3} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-medium resize-none" value={settings.heroSubtitle} onChange={e => onUpdateSettings({ heroSubtitle: e.target.value })} />
+                <textarea rows={3} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-medium resize-none" value={String(settings.heroSubtitle)} onChange={e => onUpdateSettings({ heroSubtitle: e.target.value })} />
               </div>
             </div>
           </section>
 
           <section className="bg-white p-10 rounded-[3rem] shadow-xl space-y-6">
-            <h3 className="text-xl font-black">Informations & Chat</h3>
+            <h3 className="text-xl font-black">Réseaux Sociaux</h3>
             <div className="space-y-4">
-               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Texte de Copyright (Bas de page)</label>
-                <input type="text" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-medium" value={settings.footerText} onChange={e => onUpdateSettings({ footerText: e.target.value })} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Instagram</label>
+                  <input type="text" placeholder="URL" className="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm" value={settings.socialLinks?.instagram || ''} onChange={e => onUpdateSettings({ socialLinks: { ...settings.socialLinks, instagram: e.target.value } })} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Facebook</label>
+                  <input type="text" placeholder="URL" className="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm" value={settings.socialLinks?.facebook || ''} onChange={e => onUpdateSettings({ socialLinks: { ...settings.socialLinks, facebook: e.target.value } })} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Twitter (X)</label>
+                  <input type="text" placeholder="URL" className="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm" value={settings.socialLinks?.twitter || ''} onChange={e => onUpdateSettings({ socialLinks: { ...settings.socialLinks, twitter: e.target.value } })} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">TikTok</label>
+                  <input type="text" placeholder="URL" className="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm" value={settings.socialLinks?.tiktok || ''} onChange={e => onUpdateSettings({ socialLinks: { ...settings.socialLinks, tiktok: e.target.value } })} />
+                </div>
               </div>
-              <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+              <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-2xl border border-indigo-100 mt-4">
                 <div>
                   <h4 className="font-black text-indigo-900 text-sm">Assistant IA Gemini</h4>
                   <p className="text-xs text-indigo-600">Affiche le chatbot de vente intelligent</p>
@@ -168,22 +207,44 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
             
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Couleurs</label>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Couleurs du Thème</label>
               <div className="grid grid-cols-3 gap-4">
-                <input type="color" value={settings.backgroundColor} onChange={e => onUpdateSettings({ backgroundColor: e.target.value, useImageBackground: false })} className="w-full h-12 rounded-lg cursor-pointer" />
-                <input type="color" value={settings.accentColor} onChange={e => onUpdateSettings({ accentColor: e.target.value })} className="w-full h-12 rounded-lg cursor-pointer" />
-                <input type="color" value={settings.textColor} onChange={e => onUpdateSettings({ textColor: e.target.value })} className="w-full h-12 rounded-lg cursor-pointer" />
+                <div className="text-center">
+                  <div className="text-[8px] font-bold text-gray-400 mb-1">FOND</div>
+                  <input type="color" value={settings.backgroundColor} onChange={e => onUpdateSettings({ backgroundColor: e.target.value, useImageBackground: false })} className="w-full h-12 rounded-lg cursor-pointer" />
+                </div>
+                <div className="text-center">
+                  <div className="text-[8px] font-bold text-gray-400 mb-1">ACCENT</div>
+                  <input type="color" value={settings.accentColor} onChange={e => onUpdateSettings({ accentColor: e.target.value })} className="w-full h-12 rounded-lg cursor-pointer" />
+                </div>
+                <div className="text-center">
+                  <div className="text-[8px] font-bold text-gray-400 mb-1">TEXTE</div>
+                  <input type="color" value={settings.textColor} onChange={e => onUpdateSettings({ textColor: e.target.value })} className="w-full h-12 rounded-lg cursor-pointer" />
+                </div>
               </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <button 
+                onClick={resetDesign}
+                className="text-xs font-black text-red-500 hover:text-red-700 flex items-center gap-2 uppercase tracking-tighter"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Réinitialiser le style par défaut
+              </button>
             </div>
           </section>
 
           <section className="bg-white p-10 rounded-[3rem] shadow-xl space-y-6">
-            <h3 className="text-xl font-black">Fond & Overlay</h3>
+            <h3 className="text-xl font-black">Fond & Logo</h3>
             <div className="space-y-4">
-              <input type="text" placeholder="URL de l'image de fond" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl" value={settings.backgroundImage} onChange={e => onUpdateSettings({ backgroundImage: e.target.value, useImageBackground: !!e.target.value })} />
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Image de fond (URL)</label>
+                <input type="text" placeholder="Ex: https://images.unsplash.com/..." className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl" value={settings.backgroundImage} onChange={e => onUpdateSettings({ backgroundImage: e.target.value, useImageBackground: !!e.target.value })} />
+              </div>
               <div>
                 <label className="flex justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                  <span>Opacité de l'overlay (Voile sombre)</span>
+                  <span>Opacité de l'overlay sombre</span>
                   <span>{Math.round(settings.backgroundOverlayOpacity * 100)}%</span>
                 </label>
                 <input 
@@ -193,13 +254,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   onChange={e => onUpdateSettings({ backgroundOverlayOpacity: parseFloat(e.target.value) })}
                 />
               </div>
-              <input type="text" placeholder="URL du Logo" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl" value={settings.logoUrl} onChange={e => onUpdateSettings({ logoUrl: e.target.value })} />
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Logo de la boutique (URL)</label>
+                <input type="text" placeholder="URL de votre logo" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl" value={settings.logoUrl} onChange={e => onUpdateSettings({ logoUrl: e.target.value })} />
+              </div>
             </div>
           </section>
         </div>
       )}
 
-      {/* Ventes Tab */}
       {activeTab === 'sales' && (
         <div className="bg-white rounded-[3rem] shadow-xl overflow-hidden animate-in fade-in">
            <div className="p-8 border-b flex justify-between items-center">
@@ -227,55 +290,81 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                  </tr>
                </thead>
                <tbody className="divide-y">
-                 {orders.map(o => (
+                 {orders.length > 0 ? orders.map(o => (
                    <tr key={o.id} className="hover:bg-gray-50 transition-colors">
                      <td className="px-8 py-5">
-                       <div className="font-bold text-sm">{o.customerName}</div>
-                       <div className="text-[10px] text-gray-400">{o.date}</div>
+                       <div className="font-bold text-sm">{String(o.customerName)}</div>
+                       <div className="text-[10px] text-gray-400">{String(o.date)}</div>
                      </td>
-                     <td className="px-8 py-5 text-sm font-medium">{o.productTitle}</td>
-                     <td className="px-8 py-5 text-right font-black text-emerald-600">{o.price.toFixed(2)}€</td>
+                     <td className="px-8 py-5 text-sm font-medium">{String(o.productTitle)}</td>
+                     <td className="px-8 py-5 text-right font-black text-emerald-600">{Number(o.price).toFixed(2)}€</td>
                      <td className="px-8 py-5 text-right">
                        <button onClick={() => onDeleteOrder(o.id)} className="text-red-400 hover:text-red-600">Supprimer</button>
                      </td>
                    </tr>
-                 ))}
+                 )) : (
+                   <tr>
+                     <td colSpan={4} className="px-8 py-10 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">Aucune commande enregistrée</td>
+                   </tr>
+                 )}
                </tbody>
              </table>
            </div>
         </div>
       )}
 
-      {/* Produits Tab */}
       {activeTab === 'products' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in slide-in-from-left-4">
           <section className="bg-white p-8 rounded-[2.5rem] shadow-xl h-fit sticky top-24">
-            <h3 className="text-xl font-black mb-6">{editingProduct ? 'Modifier' : 'Nouveau Produit'}</h3>
-            <form onSubmit={editingProduct ? (e) => { e.preventDefault(); onUpdateProduct(editingProduct); setEditingProduct(null); } : handleAddProduct} className="space-y-4">
-              <input required placeholder="Nom" className="w-full px-5 py-4 bg-gray-50 border rounded-2xl" value={editingProduct ? editingProduct.title : newProduct.title} onChange={e => editingProduct ? setEditingProduct({...editingProduct, title: e.target.value}) : setNewProduct({...newProduct, title: e.target.value})} />
-              <input required type="number" step="0.01" placeholder="Prix" className="w-full px-5 py-4 bg-gray-50 border rounded-2xl" value={editingProduct ? editingProduct.price : newProduct.price} onChange={e => editingProduct ? setEditingProduct({...editingProduct, price: parseFloat(e.target.value)}) : setNewProduct({...newProduct, price: e.target.value})} />
-              <input placeholder="URL Image" className="w-full px-5 py-4 bg-gray-50 border rounded-2xl" value={editingProduct ? editingProduct.imageUrl : newProduct.imageUrl} onChange={e => editingProduct ? setEditingProduct({...editingProduct, imageUrl: e.target.value}) : setNewProduct({...newProduct, imageUrl: e.target.value})} />
-              <button disabled={isGenerating} className="w-full py-5 bg-gray-900 text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all">
-                {isGenerating ? 'IA Génération...' : (editingProduct ? 'Enregistrer' : 'Mettre en vente')}
+            <h3 className="text-xl font-black mb-6">{editingProduct ? 'Modifier le Produit' : 'Nouveau Produit'}</h3>
+            <form onSubmit={editingProduct ? handleUpdateProduct : handleAddProduct} className="space-y-4">
+              <div>
+                <label className="text-[8px] font-bold text-gray-400 uppercase ml-1">Nom du produit</label>
+                <input required placeholder="Ex: Montre de luxe" className="w-full px-5 py-4 bg-gray-50 border rounded-2xl" value={editingProduct ? editingProduct.title : newProduct.title} onChange={e => editingProduct ? setEditingProduct({...editingProduct, title: e.target.value}) : setNewProduct({...newProduct, title: e.target.value})} />
+              </div>
+              <div>
+                <label className="text-[8px] font-bold text-gray-400 uppercase ml-1">Prix (€)</label>
+                <input required type="number" step="0.01" placeholder="99.99" className="w-full px-5 py-4 bg-gray-50 border rounded-2xl" value={editingProduct ? editingProduct.price : newProduct.price} onChange={e => editingProduct ? setEditingProduct({...editingProduct, price: parseFloat(e.target.value) || 0}) : setNewProduct({...newProduct, price: e.target.value})} />
+              </div>
+              <div>
+                <label className="text-[8px] font-bold text-gray-400 uppercase ml-1">Catégorie</label>
+                <input placeholder="Ex: Accessoires" className="w-full px-5 py-4 bg-gray-50 border rounded-2xl" value={editingProduct ? editingProduct.category : newProduct.category} onChange={e => editingProduct ? setEditingProduct({...editingProduct, category: e.target.value}) : setNewProduct({...newProduct, category: e.target.value})} />
+              </div>
+              <div>
+                <label className="text-[8px] font-bold text-gray-400 uppercase ml-1">Image URL</label>
+                <input placeholder="https://..." className="w-full px-5 py-4 bg-gray-50 border rounded-2xl" value={editingProduct ? editingProduct.imageUrl : newProduct.imageUrl} onChange={e => editingProduct ? setEditingProduct({...editingProduct, imageUrl: e.target.value}) : setNewProduct({...newProduct, imageUrl: e.target.value})} />
+              </div>
+              
+              <button disabled={isGenerating} className="w-full py-5 bg-gray-900 text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg disabled:opacity-50">
+                {isGenerating ? 'IA Génération...' : (editingProduct ? 'Enregistrer les modifications' : 'Mettre en vente')}
               </button>
-              {editingProduct && <button type="button" onClick={() => setEditingProduct(null)} className="w-full py-3 text-gray-400 font-bold">Annuler</button>}
+              {editingProduct && (
+                <button type="button" onClick={() => setEditingProduct(null)} className="w-full py-3 text-gray-400 font-bold hover:text-gray-600">
+                  Annuler l'édition
+                </button>
+              )}
             </form>
           </section>
           
           <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {products.map(p => (
+            {products.length > 0 ? products.map(p => (
               <div key={p.id} className="p-6 bg-white rounded-3xl border flex items-center gap-4 hover:shadow-lg transition-all">
                 <img src={p.imageUrl} className="w-20 h-20 rounded-2xl object-cover" alt="" />
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-black truncate">{p.title}</h4>
-                  <p className="font-black text-emerald-600">{p.price.toFixed(2)}€</p>
+                  <h4 className="font-black truncate text-gray-900">{String(p.title)}</h4>
+                  <p className="font-black text-emerald-600">{Number(p.price).toFixed(2)}€</p>
+                  <span className="text-[9px] uppercase font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">{String(p.category)}</span>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <button onClick={() => setEditingProduct(p)} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100">Éditer</button>
-                  <button onClick={() => onDeleteProduct(p.id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100">Suppr.</button>
+                  <button onClick={() => setEditingProduct(p)} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                  </button>
+                  <button onClick={() => onDeleteProduct(p.id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  </button>
                 </div>
               </div>
-            ))}
+            )) : null}
           </div>
         </div>
       )}

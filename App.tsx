@@ -27,56 +27,57 @@ const DEFAULT_SETTINGS: SiteSettings = {
   socialLinks: { facebook: '', instagram: '', twitter: '', linkedin: '', tiktok: '' }
 };
 
-const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    title: 'Exemple de Produit',
-    price: 99.00,
-    description: 'Ceci est une description générée par défaut. Modifiez-la dans le panneau admin.',
-    imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800',
-    category: 'Général'
-  }
-];
-
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('cs_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('cs_user');
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      return (parsed && typeof parsed === 'object' && parsed.email) ? parsed : null;
+    } catch (e) { return null; }
   });
   
   const [viewMode, setViewMode] = useState<ViewMode>('customer');
 
   const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('cs_products');
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem('cs_products');
+      if (saved) {
         const parsed = JSON.parse(saved);
-        return parsed.length > 0 ? parsed : DEFAULT_PRODUCTS;
-      } catch(e) { return DEFAULT_PRODUCTS; }
-    }
-    return DEFAULT_PRODUCTS;
+        return Array.isArray(parsed) ? parsed : [];
+      }
+    } catch(e) {}
+    return [];
   });
 
   const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('cs_orders');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('cs_orders');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+    } catch (e) { return []; }
+    return [];
   });
 
   const [settings, setSettings] = useState<SiteSettings>(() => {
-    const saved = localStorage.getItem('cs_settings');
-    if (saved) {
-      try {
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
-      } catch (e) { return DEFAULT_SETTINGS; }
-    }
+    try {
+      const saved = localStorage.getItem('cs_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_SETTINGS, ...parsed };
+      }
+    } catch (e) {}
     return DEFAULT_SETTINGS;
   });
 
-  const isUserAdmin = user?.email.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim();
+  const isUserAdmin = user?.email?.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim();
 
   useEffect(() => {
     if (isUserAdmin) setViewMode('admin');
-  }, [user]);
+    else setViewMode('customer');
+  }, [isUserAdmin]);
 
   useEffect(() => { localStorage.setItem('cs_products', JSON.stringify(products)); }, [products]);
   useEffect(() => { localStorage.setItem('cs_orders', JSON.stringify(orders)); }, [orders]);
@@ -86,14 +87,9 @@ const App: React.FC = () => {
     else localStorage.removeItem('cs_user');
   }, [user]);
 
-  const addProduct = (product: Product) => setProducts(prev => [product, ...prev]);
-  const updateProduct = (updated: Product) => setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
-  const deleteProduct = (id: string) => setProducts(prev => prev.filter(p => p.id !== id));
-  const addOrder = (order: Order) => setOrders(prev => [order, ...prev]);
-  const deleteOrder = (id: string) => setOrders(prev => prev.filter(o => o.id !== id));
   const updateSettings = (newSettings: Partial<SiteSettings>) => setSettings(prev => ({ ...prev, ...newSettings }));
 
-  const fontClass = `font-${settings.fontFamily}`;
+  const fontClass = `font-${settings.fontFamily || 'modern'}`;
 
   const backgroundStyle: React.CSSProperties = settings.useImageBackground && settings.backgroundImage
     ? {
@@ -115,7 +111,7 @@ const App: React.FC = () => {
       <Navbar 
         viewMode={viewMode} 
         setViewMode={setViewMode} 
-        shopName={settings.shopName}
+        shopName={String(settings.shopName || 'Ma Boutique')}
         logoUrl={settings.logoUrl}
         accentColor={settings.accentColor}
         user={user}
@@ -129,28 +125,31 @@ const App: React.FC = () => {
           <AdminPanel 
             settings={settings} 
             onUpdateSettings={updateSettings} 
-            onAddProduct={addProduct}
-            onUpdateProduct={updateProduct}
+            onAddProduct={(p) => setProducts(prev => [p, ...prev])}
+            onUpdateProduct={(u) => setProducts(prev => prev.map(p => p.id === u.id ? u : p))}
             products={products}
-            onDeleteProduct={deleteProduct}
+            onDeleteProduct={(id) => setProducts(prev => prev.filter(p => p.id !== id))}
             orders={orders}
-            onDeleteOrder={deleteOrder}
-            onAddOrder={addOrder}
+            onDeleteOrder={(id) => setOrders(prev => prev.filter(o => o.id !== id))}
+            onAddOrder={(o) => setOrders(prev => [o, ...prev])}
           />
         ) : (
           <div className="animate-in fade-in slide-in-from-top-4 duration-1000">
             <div className="text-center mb-16 py-20 px-4">
               <h1 className="text-5xl md:text-8xl font-black mb-6 tracking-tighter leading-tight" style={{ color: settings.textColor }}>
-                {settings.heroTitle}
+                {String(settings.heroTitle || '')}
               </h1>
               <p className="text-xl md:text-2xl opacity-80 font-medium max-w-3xl mx-auto" style={{ color: settings.textColor }}>
-                {settings.heroSubtitle}
+                {String(settings.heroSubtitle || '')}
               </p>
               <div className="mt-10 flex justify-center gap-4">
                  <button 
                   onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })}
                   className="px-8 py-4 font-bold text-white shadow-xl hover:scale-105 active:scale-95 transition-all"
-                  style={{ backgroundColor: settings.accentColor, borderRadius: settings.buttonRadius === 'none' ? '0' : settings.buttonRadius === 'md' ? '8px' : settings.buttonRadius === 'xl' ? '24px' : '9999px' }}
+                  style={{ 
+                    backgroundColor: settings.accentColor, 
+                    borderRadius: settings.buttonRadius === 'none' ? '0' : settings.buttonRadius === 'md' ? '8px' : settings.buttonRadius === 'xl' ? '24px' : '9999px' 
+                  }}
                 >
                   Découvrir la collection
                 </button>
@@ -158,25 +157,29 @@ const App: React.FC = () => {
             </div>
             
             <div id="products-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-20">
-              {products.map(product => (
+              {products.length > 0 ? products.map(product => (
                 <ProductCard 
                   key={product.id} 
                   product={product} 
                   isAdmin={false}
                   accentColor={settings.accentColor}
-                  onOrder={addOrder}
+                  onOrder={(o) => setOrders(prev => [o, ...prev])}
                   user={user}
                   settings={settings}
                 />
-              ))}
+              )) : (
+                <div className="col-span-full text-center py-20 opacity-50 font-bold" style={{ color: settings.textColor }}>
+                  Aucun produit pour le moment.
+                </div>
+              )}
             </div>
 
             <footer className="mt-20 py-10 border-t text-center opacity-60" style={{ color: settings.textColor, borderColor: `${settings.textColor}20` }}>
-              <p className="text-sm font-bold uppercase tracking-widest">{settings.footerText}</p>
+              <p className="text-sm font-bold uppercase tracking-widest">{String(settings.footerText || '')}</p>
               <div className="flex justify-center gap-6 mt-6">
-                {Object.entries(settings.socialLinks).map(([name, url]) => url && (
-                  <a key={name} href={url} target="_blank" rel="noopener noreferrer" className="hover:opacity-100 transition-opacity">
-                    <span className="capitalize">{name}</span>
+                {Object.entries(settings.socialLinks || {}).map(([name, url]) => url && (
+                  <a key={name} href={String(url)} target="_blank" rel="noopener noreferrer" className="hover:opacity-100 transition-opacity">
+                    <span className="capitalize">{String(name)}</span>
                   </a>
                 ))}
               </div>
@@ -186,7 +189,7 @@ const App: React.FC = () => {
       </main>
 
       {settings.showChatbot && (
-        <Chatbot products={products} shopName={settings.shopName} accentColor={settings.accentColor} settings={settings} />
+        <Chatbot products={products} shopName={String(settings.shopName || 'Boutique')} accentColor={settings.accentColor} settings={settings} />
       )}
     </div>
   );

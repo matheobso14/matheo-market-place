@@ -9,8 +9,5 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// On retire StrictMode temporairement pour stabiliser l'environnement CDN
+root.render(<App />);
