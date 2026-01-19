@@ -1,0 +1,5 @@
+{
+  "name": "CustomShop Builder",
+  "description": "A fully customizable e-commerce storefront builder where you can manage products, change themes, and use AI to generate descriptions.",
+  "requestFramePermissions": []
+}
