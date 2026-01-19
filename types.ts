@@ -27,14 +27,24 @@ export interface SocialLinks {
   tiktok?: string;
 }
 
+export type FontFamily = 'modern' | 'elegant' | 'tech' | 'mono';
+export type ButtonRadius = 'none' | 'md' | 'xl' | 'full';
+
 export interface SiteSettings {
   shopName: string;
+  heroTitle: string;
+  heroSubtitle: string;
   logoUrl: string;
   backgroundColor: string;
   backgroundImage: string;
+  backgroundOverlayOpacity: number;
   accentColor: string;
   textColor: string;
   useImageBackground: boolean;
+  fontFamily: FontFamily;
+  buttonRadius: ButtonRadius;
+  footerText: string;
+  showChatbot: boolean;
   socialLinks: SocialLinks;
 }
 
