@@ -66,7 +66,9 @@ const App: React.FC = () => {
       const saved = localStorage.getItem('cs_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return { ...DEFAULT_SETTINGS, ...parsed };
+        if (parsed && typeof parsed === 'object') {
+          return { ...DEFAULT_SETTINGS, ...parsed };
+        }
       }
     } catch (e) {}
     return DEFAULT_SETTINGS;
@@ -99,7 +101,7 @@ const App: React.FC = () => {
         backgroundAttachment: 'fixed'
       }
     : {
-        backgroundColor: settings.backgroundColor
+        backgroundColor: settings.backgroundColor || '#f3f4f6'
       };
 
   if (!user) {
@@ -111,9 +113,9 @@ const App: React.FC = () => {
       <Navbar 
         viewMode={viewMode} 
         setViewMode={setViewMode} 
-        shopName={String(settings.shopName || 'Ma Boutique')}
+        shopName={String(settings.shopName || 'Boutique')}
         logoUrl={settings.logoUrl}
-        accentColor={settings.accentColor}
+        accentColor={settings.accentColor || '#4f46e5'}
         user={user}
         onLogout={() => { setUser(null); setViewMode('customer'); }}
         isAdmin={isUserAdmin}
@@ -136,10 +138,10 @@ const App: React.FC = () => {
         ) : (
           <div className="animate-in fade-in slide-in-from-top-4 duration-1000">
             <div className="text-center mb-16 py-20 px-4">
-              <h1 className="text-5xl md:text-8xl font-black mb-6 tracking-tighter leading-tight" style={{ color: settings.textColor }}>
+              <h1 className="text-5xl md:text-8xl font-black mb-6 tracking-tighter leading-tight" style={{ color: settings.textColor || '#111827' }}>
                 {String(settings.heroTitle || '')}
               </h1>
-              <p className="text-xl md:text-2xl opacity-80 font-medium max-w-3xl mx-auto" style={{ color: settings.textColor }}>
+              <p className="text-xl md:text-2xl opacity-80 font-medium max-w-3xl mx-auto" style={{ color: settings.textColor || '#111827' }}>
                 {String(settings.heroSubtitle || '')}
               </p>
               <div className="mt-10 flex justify-center gap-4">
@@ -147,7 +149,7 @@ const App: React.FC = () => {
                   onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })}
                   className="px-8 py-4 font-bold text-white shadow-xl hover:scale-105 active:scale-95 transition-all"
                   style={{ 
-                    backgroundColor: settings.accentColor, 
+                    backgroundColor: settings.accentColor || '#4f46e5', 
                     borderRadius: settings.buttonRadius === 'none' ? '0' : settings.buttonRadius === 'md' ? '8px' : settings.buttonRadius === 'xl' ? '24px' : '9999px' 
                   }}
                 >
@@ -162,19 +164,19 @@ const App: React.FC = () => {
                   key={product.id} 
                   product={product} 
                   isAdmin={false}
-                  accentColor={settings.accentColor}
+                  accentColor={settings.accentColor || '#4f46e5'}
                   onOrder={(o) => setOrders(prev => [o, ...prev])}
                   user={user}
                   settings={settings}
                 />
               )) : (
-                <div className="col-span-full text-center py-20 opacity-50 font-bold" style={{ color: settings.textColor }}>
+                <div className="col-span-full text-center py-20 opacity-50 font-bold" style={{ color: settings.textColor || '#111827' }}>
                   Aucun produit pour le moment.
                 </div>
               )}
             </div>
 
-            <footer className="mt-20 py-10 border-t text-center opacity-60" style={{ color: settings.textColor, borderColor: `${settings.textColor}20` }}>
+            <footer className="mt-20 py-10 border-t text-center opacity-60" style={{ color: settings.textColor || '#111827', borderColor: `${settings.textColor || '#111827'}20` }}>
               <p className="text-sm font-bold uppercase tracking-widest">{String(settings.footerText || '')}</p>
               <div className="flex justify-center gap-6 mt-6">
                 {Object.entries(settings.socialLinks || {}).map(([name, url]) => url && (
@@ -189,7 +191,7 @@ const App: React.FC = () => {
       </main>
 
       {settings.showChatbot && (
-        <Chatbot products={products} shopName={String(settings.shopName || 'Boutique')} accentColor={settings.accentColor} settings={settings} />
+        <Chatbot products={products} shopName={String(settings.shopName || 'Boutique')} accentColor={settings.accentColor || '#4f46e5'} settings={settings} />
       )}
     </div>
   );

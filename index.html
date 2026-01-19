@@ -15,6 +15,7 @@
             overflow-x: hidden; 
             margin: 0;
             padding: 0;
+            background-color: #f3f4f6; /* Couleur de secours pour éviter le flash blanc pur */
         }
         .font-modern { font-family: 'Inter', sans-serif; }
         .font-elegant { font-family: 'Playfair Display', serif; }
@@ -43,5 +44,7 @@
 </head>
 <body class="font-modern">
     <div id="root"></div>
+    <!-- Script de démarrage explicite -->
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>
